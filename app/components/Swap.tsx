@@ -1,9 +1,58 @@
-"use client"
+'use client';
 import Image from 'next/image';
+import TokenModal from './TokenModal';
+import { ChangeEvent, useCallback, useEffect, useState } from 'react';
+import { Token } from '../types/type';
+import { useTokenHistoryData } from '../queries/use-token-history';
+import { useTokenPrice } from '../queries/use-token-price';
 
 export default function Swap() {
+  const [open, setOpen] = useState(false);
+  const [tokenList, setTokenList] = useState<Token[]>([]);
+  const { data, error, isLoading } = useTokenHistoryData();
+  const [sellToken, setSellToken] = useState<Token>();
+  const [buyToken, setBuyToken] = useState<Token>();
+  const [selectedToken, setSelectedModeToken] = useState<'buyToken' | 'sellToken'>();
+  const { data: excahngeData } = useTokenPrice(sellToken, buyToken);
+  const [amount, setAmount] = useState<{ sellAmount: number | string; buyAmount: number | string }>();
+
+  useEffect(() => {
+    if (data) {
+      setTokenList(data);
+      setSellToken(data[0]);
+      setBuyToken(data[1]);
+    }
+  }, [data]);
+
+  const handleSelectToken = (token: Token) => {
+    if (selectedToken === 'buyToken') {
+      setBuyToken(token);
+    } else {
+      setSellToken(token);
+    }
+  };
+
+  const handleChangeSellAmount = useCallback(
+    (e: ChangeEvent<HTMLInputElement>) => {
+      const sellAmount = Number(e.target.value);
+      const buyAmount = Number((sellAmount * (excahngeData?.exchangeRate || 1)).toFixed(4));
+      setAmount({ sellAmount: e.target.value, buyAmount });
+    },
+    [excahngeData],
+  );
+
+  const handleChangeBuyAmount = useCallback(
+    (e: ChangeEvent<HTMLInputElement>) => {
+      const buyAmount = Number(e.target.value);
+      const sellAmount = Number((buyAmount / (excahngeData?.exchangeRate || 1)).toFixed(4));
+      setAmount({ sellAmount, buyAmount: e.target.value });
+    },
+    [excahngeData],
+  );
+
   return (
     <div className="border rounded-xl p-10 mx-auto w-full max-w-[1180px] mt-10">
+      <TokenModal open={open} setOpen={setOpen} onChange={handleSelectToken} tokens={tokenList} />
       <div className="flex justify-between">
         <p className="text-lg uppercase">swap tokens</p>
         <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -22,13 +71,29 @@ export default function Swap() {
             <div className="flex w-full  bg-[#1E1E1E] items-center p-5 px-12">
               <div className="flex-1">
                 <div>
-                  <input className="border-none text-4xl w-full outline-none bg-transparent" type="number" />
+                  <input
+                    className="border-none text-4xl w-full outline-none bg-transparent"
+                    type="number"
+                    value={amount?.sellAmount}
+                    onChange={handleChangeSellAmount}
+                  />
                 </div>
               </div>
               <div>
-                <button className="p-2 flex gap-2 bg-black items-center">
-                  <Image src="/assets/s-bitcoin.png" width={32} height={32} alt={'token'} />
-                  {'BTC >'}
+                <button
+                  className="p-2 flex gap-2 bg-black items-center"
+                  onClick={() => {
+                    setOpen(true);
+                    setSelectedModeToken('sellToken');
+                  }}>
+                  <Image
+                    src={`/assets/s-${sellToken?.tokenId}.png`}
+                    className="h-8 w-auto"
+                    width={32}
+                    height={32}
+                    alt={'token'}
+                  />
+                  {`${sellToken?.tokenSymbol} >`}
                 </button>
               </div>
             </div>
@@ -37,13 +102,29 @@ export default function Swap() {
             <div className="flex w-full  bg-[#1E1E1E] items-center p-5 px-12">
               <div className="flex-1">
                 <div>
-                  <input className="border-none text-4xl w-full outline-none bg-transparent" type="number" />
+                  <input
+                    className="border-none text-4xl w-full outline-none bg-transparent"
+                    type="number"
+                    value={amount?.buyAmount}
+                    onChange={handleChangeBuyAmount}
+                  />
                 </div>
               </div>
               <div>
-                <button className="p-2 flex gap-2 bg-black items-center">
-                  <Image src="/assets/s-bitcoin.png" width={32} height={32} alt={'token'} />
-                  {'BTC >'}
+                <button
+                  className="p-2 flex gap-2 bg-black items-center"
+                  onClick={() => {
+                    setOpen(true);
+                    setSelectedModeToken('buyToken');
+                  }}>
+                  <Image
+                    src={`/assets/s-${buyToken?.tokenId}.png`}
+                    width={32}
+                    height={32}
+                    className="h-8 w-auto"
+                    alt={'token'}
+                  />
+                  {`${buyToken?.tokenSymbol} >`}
                 </button>
               </div>
             </div>
@@ -74,7 +155,10 @@ export default function Swap() {
       </div>
       <div className="flex justify-between mt-5">
         <div>
-          <p> 1 BTC = 3223 ETH</p>
+          <p>
+            {' '}
+            1 {sellToken?.tokenSymbol} = {excahngeData?.exchangeRate?.toFixed(4)} {buyToken?.tokenSymbol}
+          </p>
           <p className="text-blue-400">Free exchange</p>
         </div>
         <div className="text-gray-500">Updates in 4s</div>

@@ -1,6 +1,10 @@
+'use client';
 import Image from 'next/image';
+import { useTokenHistoryData } from '../queries/use-token-history';
 
 export default function Hisotry() {
+  const { data, error, isLoading } = useTokenHistoryData();
+
   return (
     <div className="p-5 flex justify-center mt-10">
       <div className="border-2 bg-[#000000CC] rounded-xl border-gray-500  w-full max-w-[1180px] p-10">
@@ -15,18 +19,40 @@ export default function Hisotry() {
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td className="flex items-center gap-4 py-2">
-                <Image src={'/assets/bitcoin.png'} width={64} height={64} alt="token_id" />
-                BTC/USD
-              </td>
-              <td> $63,000.00 </td>
-              <td> 0.33% </td>
-              <td> $63,000.00 </td>
-              <td className="text-right">
-                <button className=" bg-green-300 text-cyan-950 p-2"> Trade </button>
-              </td>
-            </tr>
+            {data?.map((token) => (
+              <tr>
+                <td className="flex items-center gap-4 py-2 uppercase">
+                  <Image src={`/assets/${token.tokenId}.png`} width={64} height={64} alt="token_id" />
+                  {token.tokenId}/USD
+                </td>
+                <td> ${token.price} </td>
+                <td
+                  className={
+                    token.dailyChange > 0
+                      ? 'text-green-400'
+                      : token.dailyChange === 0
+                      ? 'text-gray-600'
+                      : 'text-red-600'
+                  }>
+                  {token.dailyChange >= 0 ? '+' : ''}
+                  {((token.dailyChange / token.price) * 100).toFixed(2)}%{' '}
+                </td>
+                <td
+                  className={
+                    token.dailyChange > 0
+                      ? 'text-green-400'
+                      : token.dailyChange === 0
+                      ? 'text-gray-600'
+                      : 'text-red-600'
+                  }>
+                  {token.dailyChange >= 0 ? '+' : ''}
+                  {token.dailyChange.toFixed(2)}{' '}
+                </td>
+                <td className="text-right">
+                  <button className=" bg-green-300 text-cyan-950 p-2"> Trade </button>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
