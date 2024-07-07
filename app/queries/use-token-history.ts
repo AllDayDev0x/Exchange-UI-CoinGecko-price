@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '../libs/supabase';
-import { Token } from '../types/type';
+import { Token, TokenPriceData } from '../types/type';
 
 const fetchTokenHistory = async () => {
   const data = await fetch('/api/getTokenHistory', {
@@ -11,7 +11,7 @@ const fetchTokenHistory = async () => {
       throw new Error(e.message);
     });
 
-  return data.data as Token[];
+  return data.data as TokenPriceData[];
 };
 
 export const useTokenHistoryData = () => useQuery({ queryKey: ['history'], queryFn: fetchTokenHistory });

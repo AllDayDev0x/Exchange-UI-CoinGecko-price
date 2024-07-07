@@ -4,10 +4,11 @@ export type Token = {
 };
 
 export type TokenPriceData = {
+  price: number;
   tokenId: string;
   tokenSymbol: string;
-  tokenPrice: Number;
-  dailyChange: Number;
+  tokenPrice: number;
+  dailyChange: number;
 };
 
 export type ExchangePrice = {
